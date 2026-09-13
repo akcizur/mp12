@@ -13,6 +13,7 @@ function readDb() {
 
 function writeDb(db) {
   localStorage.setItem(DB_KEY, JSON.stringify(db))
+  document.dispatchEvent(new Event('mp12:db-changed'))
 }
 
 function renderReferenceManager(backdrop) {
@@ -64,10 +65,9 @@ function renderReferenceManager(backdrop) {
 
   const close = () => backdrop.classList.remove('open')
   backdrop.querySelector('#dbClose').onclick = close
+
   backdrop.querySelectorAll('[data-ref-add]').forEach((button) => {
     button.onclick = () => {
-      const form = button.closest('.ref-section')
-      const kind = form.parentElement ? form.querySelector('.ref-row')?.dataset.kind || form.querySelector('[data-add-id]')?.closest('.ref-section')?.querySelector('[data-ref-add]')?.dataset.kind : null
       const sectionNode = button.closest('.ref-section')
       const heading = sectionNode.querySelector('h3')?.textContent || ''
       const addId = String(sectionNode.querySelector('[data-add-id]')?.value || '').trim()
@@ -113,22 +113,21 @@ function renderReferenceManager(backdrop) {
       }
 
       const oldId = String(current.id)
-      current.id = newId
       if (kind === 'materials') {
-        current.name = String(row.querySelector('[data-field="name"]')?.value || '').trim()
+        const newName = String(row.querySelector('[data-field="name"]')?.value || '').trim()
+        if (!newName) return
+        current.name = newName
         current.min = Number(row.querySelector('[data-field="min"]')?.value || 0) || 0
-        if (!current.name) return
         if (oldId !== newId && Array.isArray(next.packs)) next.packs.forEach(pack => { if (String(pack.material) === oldId) pack.material = newId })
       }
       if (kind === 'boxes' && oldId !== newId && Array.isArray(next.packs)) next.packs.forEach(pack => { if (String(pack.box) === oldId) pack.box = newId })
       if (kind === 'positions' && oldId !== newId && Array.isArray(next.packs)) next.packs.forEach(pack => { if (String(pack.position) === oldId) pack.position = newId })
-
+      current.id = newId
       list[index] = current
       next[kind] = list
       writeDb(next)
       renderReferenceManager(backdrop)
       backdrop.classList.add('open')
-      document.dispatchEvent(new Event('mp12:db-changed'))
     }
   })
 
@@ -153,7 +152,6 @@ function renderReferenceManager(backdrop) {
       writeDb(next)
       renderReferenceManager(backdrop)
       backdrop.classList.add('open')
-      document.dispatchEvent(new Event('mp12:db-changed'))
     }
   })
 }
@@ -174,7 +172,7 @@ managerStyle.textContent = `
   .ref-input { width:100%; min-width:0; height:32px; border:1px solid hsl(var(--input)); border-radius:var(--radius); background:hsl(var(--background)); color:hsl(var(--foreground)); padding:0 8px; outline:0; font-size:11px; }
   .ref-input:focus { border-color:hsl(var(--ring)); box-shadow:0 0 0 2px hsl(var(--ring)/.12); }
   .ref-actions { display:flex; gap:5px; }
-  .ref-actions button,.ref-add-grid button { height:32px; border:1px solid hsl(var(--border)); border-radius:var(--radius); background:hsl(var(--secondary)); color:hsl(var(--secondary-foreground)); padding:0 9px; font-size:10px; }
+  .ref-actions button,.ref-add-grid button { height:32px; border:1px solid hsl(var(--border)); border-radius:var(--radius); background:hsl(var(--secondary)); color:hsl(var(--secondary-foreground)); padding:0 9px; font-size:10px; cursor:pointer; }
   .ref-actions .ref-delete { color:hsl(var(--destructive)); }
   .ref-add-grid { display:grid; grid-template-columns:minmax(100px,.35fr) minmax(160px,1fr) minmax(100px,.4fr) auto; gap:8px; padding:9px 10px; border-top:1px solid hsl(var(--border)); background:hsl(var(--muted)/.15); }
   .ref-add-grid.single { grid-template-columns:1fr auto; }
@@ -184,16 +182,23 @@ managerStyle.textContent = `
 `
 document.head.appendChild(managerStyle)
 
-const dbButtonObserver = new MutationObserver(() => {
-  const backdrop = document.querySelector('#dbBackdrop')
+function bindReferenceManager() {
   const opener = document.querySelector('.db-open-btn')
-  if (!backdrop || !opener || opener.dataset.refManagerBound === '1') return
-  opener.dataset.refManagerBound = '1'
-  opener.addEventListener('click', (event) => {
+  const backdrop = document.querySelector('#dbBackdrop')
+  if (!opener || !backdrop || opener.dataset.refManagerBound === '1') return
+
+  const boundOpener = opener.cloneNode(true)
+  opener.replaceWith(boundOpener)
+  boundOpener.dataset.refManagerBound = '1'
+  boundOpener.addEventListener('click', (event) => {
     event.preventDefault()
     event.stopPropagation()
+    event.stopImmediatePropagation()
     renderReferenceManager(backdrop)
     backdrop.classList.add('open')
-  }, true)
-})
+  })
+}
+
+bindReferenceManager()
+const dbButtonObserver = new MutationObserver(bindReferenceManager)
 dbButtonObserver.observe(document.body, { childList:true, subtree:true })
