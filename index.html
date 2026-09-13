@@ -3,51 +3,67 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#0a0a0a">
-  <title>MP12 · Include Pages</title>
+  <meta name="theme-color" content="#f5f5f7">
+  <title>MP12 · Pages</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand"><span class="brand-mark">M</span><span><b>MP12</b><small>INCLUDE PAGES</small></span></div>
-      <div class="top-actions">
-        <button class="icon-btn" id="themeBtn" type="button" aria-label="Přepnout motiv">◐</button>
-        <button class="btn primary" id="addBtn" type="button">+ Přidat kartu</button>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-icon">M</div>
+        <div><strong>MP12</strong><span>Pages</span></div>
       </div>
-    </header>
 
-    <section class="hero">
-      <div>
-        <span class="eyebrow">PAGE RENDERER</span>
-        <h1>Listy a karty přes sebe</h1>
-        <p>Každá položka je samostatná stránka. Režim <b>Stack</b> skládá stránky přes sebe bez kolapsu layoutu.</p>
+      <button class="new-page" id="newPage" type="button">＋ Nová stránka</button>
+
+      <div class="side-label">Stránky</div>
+      <nav id="pageNav" class="page-nav" aria-label="Stránky"></nav>
+
+      <div class="sidebar-bottom">
+        <button class="side-action" id="themeBtn" type="button"><span>◐</span> Motiv</button>
+        <div class="connection"><i></i><span>Lokální data</span></div>
       </div>
-      <div class="view-switch" role="tablist" aria-label="Zobrazení">
-        <button class="switch active" data-view="list" type="button">☷ List</button>
-        <button class="switch" data-view="stack" type="button">▱ Stack</button>
-      </div>
-    </section>
+    </aside>
 
-    <section class="toolbar">
-      <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Hledat název, ID, text…" autocomplete="off"></label>
-      <select id="filter"><option value="all">Vše</option><option value="open">Aktivní</option><option value="draft">Koncept</option><option value="done">Hotové</option></select>
-      <button class="btn" id="shuffleBtn" type="button">Promíchat</button>
-    </section>
+    <main class="main">
+      <header class="mobile-header">
+        <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu">☰</button>
+        <strong id="mobileTitle">MP12</strong>
+      </header>
 
-    <main id="pages" class="pages list-mode" aria-live="polite"></main>
-    <footer class="footer"><span id="count">0 položek</span><span>local · no backend</span></footer>
+      <section class="page-header">
+        <div class="breadcrumbs"><span>Pages</span><b>/</b><span id="breadcrumbCurrent">Přehled</span></div>
+        <div class="title-line">
+          <div>
+            <h1 id="pageTitle">Přehled</h1>
+            <p id="pageDescription">Jednoduchý přehled obsahu aplikace.</p>
+          </div>
+          <div class="title-actions">
+            <button class="btn" id="refreshBtn" type="button">Obnovit</button>
+            <button class="btn primary" id="pageAction" type="button">＋ Přidat</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="content" id="content" aria-live="polite"></section>
+    </main>
   </div>
 
   <dialog id="dialog">
-    <form method="dialog" id="cardForm" class="dialog-form">
-      <div class="dialog-head"><div><span class="eyebrow">NOVÁ PAGE</span><h2>Přidat kartu</h2></div><button class="icon-btn" value="cancel" type="submit">×</button></div>
-      <label>Titulek<input id="titleInput" required maxlength="80" placeholder="Např. Dashboard"></label>
-      <label>Popis<textarea id="descInput" rows="4" maxlength="220" placeholder="Krátký popis stránky…"></textarea></label>
-      <label>Stav<select id="statusInput"><option value="open">Aktivní</option><option value="draft">Koncept</option><option value="done">Hotové</option></select></label>
-      <div class="dialog-actions"><button class="btn" value="cancel">Zrušit</button><button class="btn primary" value="default">Vytvořit</button></div>
+    <form method="dialog" id="form" class="dialog-card">
+      <div class="dialog-head">
+        <div><small>EDITACE</small><h2 id="dialogTitle">Nová položka</h2></div>
+        <button class="icon-btn" value="cancel" type="submit">×</button>
+      </div>
+      <div id="formFields"></div>
+      <div class="dialog-actions">
+        <button class="btn" value="cancel">Zrušit</button>
+        <button class="btn primary" id="saveBtn" value="default">Uložit</button>
+      </div>
     </form>
   </dialog>
+
   <script src="app.js"></script>
 </body>
 </html>
