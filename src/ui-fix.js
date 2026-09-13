@@ -38,6 +38,8 @@ function setTheme(theme) {
   const next = theme === 'light' ? 'light' : 'dark'
   localStorage.setItem('mp12-theme', next)
   root.dataset.theme = next
+  root.classList.toggle('dark', next === 'dark')
+  root.classList.toggle('light', next === 'light')
 
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.content = next === 'dark' ? '#09090b' : '#ffffff'
@@ -55,7 +57,7 @@ if (originalThemeButton) {
     event.stopPropagation()
     event.stopImmediatePropagation()
 
-    const current = root.dataset.theme === 'light' ? 'light' : 'dark'
+    const current = root.classList.contains('dark') ? 'dark' : 'light'
     setTheme(current === 'dark' ? 'light' : 'dark')
   })
 }
