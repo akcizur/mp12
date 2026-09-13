@@ -1,38 +1,14 @@
 <!doctype html>
 <html lang="cs">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#080808">
-<title>MP12 · Sklad</title>
-<link rel="stylesheet" href="styles.css">
-</head>
-<body>
-<div class="app">
-<header class="topbar">
-  <div class="brand"><span class="brand-mark">M</span><div><strong>MP12</strong><small>SKLAD</small></div></div>
-  <nav class="page-tabs" id="pageTabs" aria-label="Pages"></nav>
-  <div class="top-actions">
-    <button class="icon-btn" id="themeBtn" type="button" title="Motiv">◐</button>
-    <button class="btn primary" id="addBtn" type="button">+ Příjem</button>
-  </div>
-</header>
-<main>
-  <section class="summary" id="summary"></section>
-  <div class="workspace">
-    <div class="workspace-bar">
-      <div class="workspace-title"><span id="pageKicker">Pages</span><strong id="pageTitle">Zásoby</strong></div>
-      <div class="workspace-tools">
-        <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Hledat…" autocomplete="off"></label>
-        <button class="btn" id="refreshBtn" type="button">Obnovit</button>
-      </div>
-    </div>
-    <div id="pageViewport" class="page-viewport" aria-live="polite"></div>
-  </div>
-</main>
-<footer class="bottom"><span id="selection">0 řádků</span><span>Lokální data</span></footer>
-</div>
-<dialog id="dialog"><form method="dialog" id="form" class="dialog-card"><div class="dialog-head"><div><small id="dialogKicker">AKCE</small><h2 id="dialogTitle">Příjem</h2></div><button class="icon-btn" value="cancel" type="submit">×</button></div><div id="formFields"></div><div class="dialog-actions"><button class="btn" value="cancel">Zrušit</button><button class="btn primary" value="default">Uložit</button></div></form></dialog>
-<script src="app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0c0e" />
+    <meta name="description" content="MP12 — lokální inventory aplikace pro GitHub Pages." />
+    <title>MP12 · Inventory</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
