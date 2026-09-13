@@ -1,5 +1,116 @@
 const DB_KEY = 'mp12-inventory-v4'
 
+const style = document.createElement('style')
+style.textContent = `
+  .warehouse-v2 {
+    padding: 14px;
+    display: grid;
+    gap: 14px;
+  }
+  .warehouse-position-section {
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    background: hsl(var(--background));
+    overflow: hidden;
+  }
+  .warehouse-position-head {
+    min-height: 52px;
+    padding: 10px 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--muted)/.28);
+  }
+  .warehouse-position-kicker,
+  .warehouse-box-kicker {
+    display: block;
+    color: hsl(var(--muted-foreground));
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .12em;
+  }
+  .warehouse-position-head h2 {
+    margin: 1px 0 0;
+    font-size: 17px;
+    letter-spacing: -.02em;
+  }
+  .warehouse-position-meta,
+  .warehouse-box-count {
+    color: hsl(var(--muted-foreground));
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .warehouse-box-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+    padding: 10px;
+  }
+  .warehouse-box-card {
+    min-width: 0;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    background: hsl(var(--card));
+    overflow: hidden;
+  }
+  .warehouse-box-head {
+    min-height: 48px;
+    padding: 9px 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .warehouse-box-head strong {
+    display: block;
+    margin-top: 1px;
+    font: 700 15px ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  .warehouse-pack-list {
+    display: grid;
+  }
+  .warehouse-pack-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .warehouse-pack-row:last-child { border-bottom: 0; }
+  .warehouse-pack-id {
+    font: 700 11px ui-monospace,SFMono-Regular,Menlo,monospace;
+    white-space: nowrap;
+  }
+  .warehouse-pack-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+  .warehouse-pack-qty {
+    color: hsl(var(--muted-foreground));
+    font: 10px ui-monospace,SFMono-Regular,Menlo,monospace;
+    white-space: nowrap;
+  }
+  .warehouse-empty {
+    padding: 18px 12px;
+    color: hsl(var(--muted-foreground));
+    font-size: 11px;
+    text-align: center;
+  }
+  @media (max-width: 720px) {
+    .warehouse-box-grid { grid-template-columns: 1fr; }
+    .warehouse-pack-row { grid-template-columns: 1fr auto; }
+    .warehouse-pack-name { grid-column: 1 / -1; grid-row: 2; }
+  }
+`
+document.head.appendChild(style)
+
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]))
 
 function readDb() {
