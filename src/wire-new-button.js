@@ -41,23 +41,20 @@ function renderWarehouseHierarchy() {
   try { data = JSON.parse(localStorage.getItem(WAREHOUSE_DB_KEY) || 'null') || {} } catch {}
 
   const materials = Array.isArray(data.materials) ? data.materials : []
-  const positions = Array.isArray(data.positions) ? data.positions.map(item => String(item.id)) : []
+  const positionRows = Array.isArray(data.positions) ? data.positions : []
+  const positions = positionRows.map(item => ({ id:String(item.id), name:String(item.name || `Pozice ${item.id}`) }))
   const packs = Array.isArray(data.packs) ? data.packs.filter(pack => Number(pack.qty) > 0) : []
   const materialNames = new Map(materials.map(item => [String(item.id), item.name]))
-  const effectivePositions = positions.length ? positions : [...new Set(packs.map(pack => String(pack.position || '')).filter(Boolean))]
+  const effectivePositions = positions.length ? positions : [...new Set(packs.map(pack => String(pack.position || '')).filter(Boolean)).values()].map(id => ({ id, name:`Pozice ${id}` }))
 
   const sections = effectivePositions.map(position => {
-    const positionPacks = packs.filter(pack => String(pack.position || '') === position)
+    const positionPacks = packs.filter(pack => String(pack.position || '') === position.id)
     const boxIds = [...new Set(positionPacks.map(pack => String(pack.box || '')).filter(Boolean))]
     const boxes = boxIds.length ? boxIds.map(boxId => {
       const boxPacks = positionPacks.filter(pack => String(pack.box || '') === boxId)
-      return `<article class="warehouse-box-card">
-        <header class="warehouse-box-head"><div><span class="warehouse-box-kicker">BOX</span><strong>${warehouseEscape(boxId)}</strong></div><span class="warehouse-box-count">${boxPacks.length} ${boxPacks.length === 1 ? 'pytel' : 'pytlů'}</span></header>
-        <div class="warehouse-pack-list">${boxPacks.map(pack => `<div class="warehouse-pack-row"><span class="warehouse-pack-id">${warehouseEscape(pack.id)}</span><span class="warehouse-pack-name">${warehouseEscape(materialNames.get(String(pack.material)) || pack.material || 'Neznámá surovina')}</span><span class="warehouse-pack-qty">${Number(pack.qty || 0).toLocaleString('cs-CZ',{maximumFractionDigits:2})} g</span></div>`).join('')}</div>
-      </article>`
+      return `<article class="warehouse-box-card"><header class="warehouse-box-head"><div><span class="warehouse-box-kicker">BOX</span><strong>${warehouseEscape(boxId)}</strong></div><span class="warehouse-box-count">${boxPacks.length} ${boxPacks.length === 1 ? 'pytel' : 'pytlů'}</span></header><div class="warehouse-pack-list">${boxPacks.map(pack => `<div class="warehouse-pack-row"><span class="warehouse-pack-id">${warehouseEscape(pack.id)}</span><span class="warehouse-pack-name">${warehouseEscape(materialNames.get(String(pack.material)) || pack.material || 'Neznámá surovina')}</span><span class="warehouse-pack-qty">${Number(pack.qty || 0).toLocaleString('cs-CZ',{maximumFractionDigits:2})} g</span></div>`).join('')}</div></article>`
     }).join('') : '<div class="warehouse-empty">V této pozici nejsou žádné boxy.</div>'
-
-    return `<section class="warehouse-position-section"><header class="warehouse-position-head"><div><span class="warehouse-position-kicker">POZICE</span><h2>${warehouseEscape(position)}</h2></div><span class="warehouse-position-meta">${boxIds.length} ${boxIds.length === 1 ? 'box' : 'boxů'}</span></header><div class="warehouse-box-grid">${boxes}</div></section>`
+    return `<section class="warehouse-position-section"><header class="warehouse-position-head"><div><span class="warehouse-position-kicker">POZICE ${warehouseEscape(position.id)}</span><h2>${warehouseEscape(position.name)}</h2></div><span class="warehouse-position-meta">${boxIds.length} ${boxIds.length === 1 ? 'box' : 'boxů'}</span></header><div class="warehouse-box-grid">${boxes}</div></section>`
   }).join('')
 
   card.outerHTML = `<div class="warehouse-card warehouse-v2">${sections || '<div class="warehouse-empty">Žádné skladové pozice.</div>'}</div>`
