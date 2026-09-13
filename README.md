@@ -1,39 +1,74 @@
-# MP12
+# MP12 Inventory
 
-Kompaktní statická aplikace ve stylu původního Botanic remasteru: **Pages + Tables**.
+Vite + vanilla JavaScript inventory aplikace navazující na původní Botanic/WMS koncept.
 
-## Hlavní princip
+## Princip UI
 
-Obsah není skládán pod sebe. Aplikace má jeden pevný pracovní viewport a do něj `includePages()` vkládá vždy právě aktivní stránku.
+Aplikace má jeden pracovní viewport. `Pages` se nepíšou pod sebe: při přepnutí se nová stránka překryje přes aktuální a stará se po krátké animaci odstraní. Tabulky tedy zůstávají ve stejném prostoru.
 
-Při přepnutí stránky:
+Pages:
 
-- aktuální page zůstane krátce pod novou page,
-- nová page přijede na stejné místo,
-- stará page se odstraní až po dokončení přechodu,
-- výška pracovního prostoru se nemění,
-- tabulky se nikdy neskládají za sebe mimo viewport.
+`Zásoby` · `Pozice` · `Pohyby` · `Suroviny` · `Inventury`
 
-To vytváří princip **výměny pages**, nikoli dlouhé stránky plné sekcí.
+## Inventory DB
 
-## Pages
+Lokální databáze je uložená v `localStorage` a obsahuje samostatné tabulky/domény:
 
-`Přehled` · `Zásoby` · `Pozice` · `Pohyby` · `Suroviny` · `Inventura`
+- `materials` — ID a názvy surovin
+- `packs` — pytle / balení
+- `boxes` — boxy
+- `positions` — skladové pozice A1–D10
+- `movements` — audit příjmů, výdejů a přesunů
+- `counts` — inventurní kontroly
 
-Každá data page používá stejný jednoduchý tabulkový pattern. Horní navigation je pouze přepínač page; hlavní pracovní prostor je vždy jediný.
+Model zásoby používá:
 
-## Ovládání
+`ID pytle | Název suroviny | Šarže | Expirace | Box | Pozice | Aktuální hmotnost (g) | Stav`
 
-Globálně je k dispozici hledání, Obnovit, změna motivu a Příjem. Ve skladu jsou rychlé akce `Detail` a `Přesun`.
+Expirace je pouze `mm/yy`. Hmotnosti jsou v gramech.
 
-Data jsou lokální a nevyžadují backend.
+## Funkce
 
-## Spuštění
+- Příjem zásoby
+- Výdej z konkrétního pytle
+- Přesun pytle mezi boxem a pozicí
+- Detail pytle
+- Řazení tabulek
+- Hledání v aktuální page
+- Warehouse grid pozic
+- Inventury
+- CSV import/export skladu
+- Dark/light motiv
+- Kompaktní zobrazení
+- Lokální persistence bez backendu
 
-```bash
-python -m http.server 8080
+## CSV
+
+Export vytváří `mp12-sklad-YYYY-MM-DD.csv` se středníkem jako oddělovačem a BOM pro Excel.
+
+Import očekává hlavičky:
+
+```text
+id;material;lot;expiry;box;position;qty;packState
 ```
 
-Potom otevři `http://localhost:8080`.
+Při importu může být `material` ID nebo přesný název suroviny. Neznámý název se automaticky přidá do katalogu.
 
-Projekt je připravený pro GitHub Pages.
+## Vývoj
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+## GitHub Pages
+
+Repo obsahuje GitHub Actions workflow `.github/workflows/pages.yml`, které při pushi do `main` provede Vite build a nasadí `dist/` jako GitHub Pages.
+
+Backend není potřeba.
