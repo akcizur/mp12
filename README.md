@@ -1,26 +1,32 @@
 # MP12
 
-Jednoduchá statická aplikace postavená kolem **Pages + Tables**.
+Kompaktní statická aplikace ve stylu původního Botanic remasteru: **Pages + Tables**.
 
-## Princip
+## Hlavní princip
 
-Vlevo jsou stránky. Kliknutím se otevře jedna stránka v hlavním prostoru. Každá datová stránka používá jednoduchou tabulku se stejným ovládáním:
+Obsah není skládán pod sebe. Aplikace má jeden pevný pracovní viewport a do něj `includePages()` vkládá vždy právě aktivní stránku.
 
-- hledání,
-- řazení kliknutím na hlavičku,
-- `Upravit`,
-- `Smazat`,
-- `＋ Přidat`.
+Při přepnutí stránky:
 
-Výchozí stránky jsou `Přehled`, `Suroviny`, `Sklad`, `Pohyby` a `Pozice`.
+- aktuální page zůstane krátce pod novou page,
+- nová page přijede na stejné místo,
+- stará page se odstraní až po dokončení přechodu,
+- výška pracovního prostoru se nemění,
+- tabulky se nikdy neskládají za sebe mimo viewport.
+
+To vytváří princip **výměny pages**, nikoli dlouhé stránky plné sekcí.
+
+## Pages
+
+`Přehled` · `Zásoby` · `Pozice` · `Pohyby` · `Suroviny` · `Inventura`
+
+Každá data page používá stejný jednoduchý tabulkový pattern. Horní navigation je pouze přepínač page; hlavní pracovní prostor je vždy jediný.
 
 ## Ovládání
 
-**Přehled** slouží jako startovní stránka a obsahuje rychlé statistiky a poslední pohyby.
+Globálně je k dispozici hledání, Obnovit, změna motivu a Příjem. Ve skladu jsou rychlé akce `Detail` a `Přesun`.
 
-**Suroviny / Sklad / Pohyby / Pozice** jsou obyčejné tabulky. Žádné překrývající se karty ani speciální režim stacku.
-
-Data se ukládají lokálně do `localStorage`, takže není potřeba backend ani databáze.
+Data jsou lokální a nevyžadují backend.
 
 ## Spuštění
 
@@ -30,4 +36,4 @@ python -m http.server 8080
 
 Potom otevři `http://localhost:8080`.
 
-Projekt je čisté HTML/CSS/JS a je připravený pro GitHub Pages.
+Projekt je připravený pro GitHub Pages.
