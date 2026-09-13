@@ -1,243 +1,37 @@
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-
-const STORAGE = 'mp12-data-v2';
-const THEME = 'mp12-theme';
-
-const initial = {
-  pages: [
-    { id: 'dashboard', title: 'Přehled', description: 'Jednoduchý přehled obsahu aplikace.', icon: '⌂', type: 'dashboard' },
-    { id: 'materials', title: 'Suroviny', description: 'Seznam surovin a jejich základní údaje.', icon: '▤', type: 'table', table: 'materials' },
-    { id: 'stock', title: 'Sklad', description: 'Přehled položek, umístění a množství.', icon: '▦', type: 'table', table: 'stock' },
-    { id: 'moves', title: 'Pohyby', description: 'Historie příjmů, výdejů a přesunů.', icon: '↕', type: 'table', table: 'moves' },
-    { id: 'locations', title: 'Pozice', description: 'Seznam skladových pozic.', icon: '⌗', type: 'table', table: 'locations' }
-  ],
-  materials: [
-    { id: 'MAT-01', name: 'MagChel Magnesium bisglycinate', unit: 'g', note: 'Magnesium' },
-    { id: 'MAT-02', name: 'Herbal Extract', unit: 'g', note: 'Extrakt' },
-    { id: 'MAT-03', name: 'Vitamin C', unit: 'g', note: 'Prášek' }
-  ],
-  stock: [
-    { id: 'P-0001', material: 'MagChel Magnesium bisglycinate', lot: '42/26', expiration: '01/28', box: '12', position: 'A-01', weight: '1250.00', state: 'nový' },
-    { id: 'P-0002', material: 'Herbal Extract', lot: '14/26', expiration: '06/28', box: '4', position: 'B-02', weight: '720.50', state: 'otevřený' },
-    { id: 'P-0003', material: 'Vitamin C', lot: '18/26', expiration: '11/27', box: '8', position: 'A-03', weight: '980.00', state: 'nový' },
-    { id: 'P-0004', material: 'MagChel Magnesium bisglycinate', lot: '48/26', expiration: '09/28', box: '12', position: 'A-01', weight: '540.25', state: 'otevřený' }
-  ],
-  moves: [
-    { id: 'M-0004', date: '13.09.2026 07:12', pack: 'P-0004', type: 'Přesun', amount: '0', note: 'A-02 → A-01' },
-    { id: 'M-0003', date: '12.09.2026 16:40', pack: 'P-0002', type: 'Výdej', amount: '-120.00', note: 'Výrobní dávka' },
-    { id: 'M-0002', date: '12.09.2026 09:15', pack: 'P-0003', type: 'Příjem', amount: '+980.00', note: 'Nový pytel' },
-    { id: 'M-0001', date: '11.09.2026 14:21', pack: 'P-0001', type: 'Přesun', amount: '0', note: 'B-01 → A-01' }
-  ],
-  locations: [
-    { id: 'A-01', name: 'A-01', box: '12', note: 'Hlavní sklad' },
-    { id: 'A-02', name: 'A-02', box: '2', note: 'Příjem' },
-    { id: 'A-03', name: 'A-03', box: '8', note: 'Výdej' },
-    { id: 'B-02', name: 'B-02', box: '4', note: 'Extrakt' }
-  ]
-};
-
-let data = load();
-let currentPage = data.pages[0].id;
-let query = '';
-let editing = null;
-let sort = { key: null, direction: 1 };
-
-function load() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE));
-    return saved?.pages ? saved : structuredClone(initial);
-  } catch { return structuredClone(initial); }
-}
-
-function save() { localStorage.setItem(STORAGE, JSON.stringify(data)); }
-function esc(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c])); }
-function current() { return data.pages.find(p => p.id === currentPage) || data.pages[0]; }
-
-function tableConfig(type) {
-  return {
-    materials: {
-      title: 'Suroviny',
-      columns: [['id','ID'],['name','Název suroviny'],['unit','Jednotka'],['note','Poznámka']],
-      rows: data.materials,
-      form: [['name','Název suroviny','text'],['unit','Jednotka','text'],['note','Poznámka','text']]
-    },
-    stock: {
-      title: 'Sklad',
-      columns: [['id','ID pytle'],['material','Název suroviny'],['lot','Šarže'],['expiration','Expirace'],['box','Box'],['position','Pozice'],['weight','Hmotnost (g)'],['state','Stav']],
-      rows: data.stock,
-      form: [['material','Název suroviny','text'],['lot','Šarže','text'],['expiration','Expirace (mm/yy)','text'],['box','Box','text'],['position','Pozice','text'],['weight','Hmotnost (g)','number'],['state','Stav','select']]
-    },
-    moves: {
-      title: 'Pohyby',
-      columns: [['id','ID záznamu'],['date','Datum a čas'],['pack','ID pytle'],['type','Typ'],['amount','Pohyb (g)'],['note','Poznámka']],
-      rows: data.moves,
-      form: [['pack','ID pytle','text'],['type','Typ','select'],['amount','Pohyb (g)','number'],['note','Poznámka','text']]
-    },
-    locations: {
-      title: 'Pozice',
-      columns: [['id','ID pozice'],['name','Název'],['box','Boxů'],['note','Poznámka']],
-      rows: data.locations,
-      form: [['name','Název','text'],['box','Počet boxů','number'],['note','Poznámka','text']]
-    }
-  }[type];
-}
-
-function renderNav() {
-  $('#pageNav').innerHTML = data.pages.map(page => `
-    <button class="page-link ${page.id === currentPage ? 'active' : ''}" data-page="${esc(page.id)}" type="button">
-      <span class="page-icon">${esc(page.icon)}</span><span>${esc(page.title)}</span>
-    </button>`).join('');
-}
-
-function renderPage() {
-  const page = current();
-  $('#breadcrumbCurrent').textContent = page.title;
-  $('#pageTitle').textContent = page.title;
-  $('#pageDescription').textContent = page.description;
-  $('#mobileTitle').textContent = page.title;
-  $('#pageAction').textContent = page.type === 'dashboard' ? '＋ Nová stránka' : '＋ Přidat';
-
-  if (page.type === 'dashboard') renderDashboard();
-  else renderTable(page.table);
-}
-
-function renderDashboard() {
-  const stockWeight = data.stock.reduce((n, x) => n + Number(x.weight || 0), 0);
-  $('#content').innerHTML = `
-    <div class="stats">
-      <article class="stat"><span>Stránky</span><strong>${data.pages.length}</strong><small>v navigaci</small></article>
-      <article class="stat"><span>Pytle</span><strong>${data.stock.length}</strong><small>ve skladu</small></article>
-      <article class="stat"><span>Hmotnost</span><strong>${stockWeight.toFixed(2)} g</strong><small>aktuální součet</small></article>
-      <article class="stat"><span>Pohyby</span><strong>${data.moves.length}</strong><small>v historii</small></article>
-    </div>
-    <div class="dashboard-grid">
-      <section class="panel">
-        <div class="panel-head"><div><span class="eyebrow">RYCHLÝ PŘEHLED</span><h2>Poslední pohyby</h2></div><button class="link-btn" data-go="moves">Zobrazit vše →</button></div>
-        ${data.moves.slice(0,4).map(m => `<div class="activity-row"><div><strong>${esc(m.type)}</strong><span>${esc(m.pack)} · ${esc(m.note)}</span></div><b>${esc(m.amount)} g</b></div>`).join('')}
-      </section>
-      <section class="panel"><div class="panel-head"><div><span class="eyebrow">STRÁNKY</span><h2>Obsah</h2></div></div>
-        <div class="quick-pages">${data.pages.slice(1).map(p => `<button class="quick-page" data-go="${p.id}" type="button"><span>${esc(p.icon)}</span><div><strong>${esc(p.title)}</strong><small>${esc(p.description)}</small></div><b>→</b></button>`).join('')}</div>
-      </section>
-    </div>`;
-}
-
-function renderTable(type) {
-  const cfg = tableConfig(type);
-  let rows = [...cfg.rows];
-  if (query.trim()) {
-    const q = query.toLocaleLowerCase('cs-CZ');
-    rows = rows.filter(row => Object.values(row).some(v => String(v).toLocaleLowerCase('cs-CZ').includes(q)));
-  }
-  if (sort.key) rows.sort((a,b) => String(a[sort.key]).localeCompare(String(b[sort.key]), 'cs-CZ', { numeric: true }) * sort.direction);
-
-  $('#content').innerHTML = `
-    <section class="table-panel">
-      <div class="table-tools">
-        <label class="search"><span>⌕</span><input id="tableSearch" value="${esc(query)}" type="search" placeholder="Hledat v tabulce…" autocomplete="off"></label>
-        <span class="result-count">${rows.length} z ${cfg.rows.length}</span>
-      </div>
-      <div class="table-scroll">
-        <table><thead><tr>${cfg.columns.map(([key,label]) => `<th><button class="th-button" data-sort="${key}" type="button">${esc(label)} <span>${sort.key === key ? (sort.direction === 1 ? '↑' : '↓') : '↕'}</span></button></th>`).join('')}<th class="actions-head"></th></tr></thead>
-        <tbody>${rows.length ? rows.map(row => `<tr data-row-id="${esc(row.id)}">${cfg.columns.map(([key]) => `<td>${cellValue(row[key], key)}</td>`).join('')}<td class="row-actions"><button class="row-btn edit" type="button">Upravit</button><button class="row-btn danger delete" type="button">Smazat</button></td></tr>`).join('') : `<tr><td colspan="${cfg.columns.length + 1}" class="empty">Žádná data</td></tr>`}</tbody></table>
-      </div>
-    </section>`;
-}
-
-function cellValue(value, key) {
-  if (key === 'state') return `<span class="pill">${esc(value)}</span>`;
-  if (key === 'weight' || key === 'amount') return `<span class="number">${esc(value)}${key === 'weight' ? '' : ' g'}</span>`;
-  return esc(value);
-}
-
-function openEditor(type, id = null) {
-  const cfg = tableConfig(type);
-  editing = { type, id };
-  const row = id ? cfg.rows.find(r => r.id === id) : null;
-  $('#dialogTitle').textContent = row ? 'Upravit položku' : `Nová položka · ${cfg.title}`;
-  $('#formFields').innerHTML = cfg.form.map(([key,label,kind]) => {
-    const value = row?.[key] ?? '';
-    if (kind === 'select') return `<label>${esc(label)}<select name="${key}"><option value="nový" ${value === 'nový' ? 'selected' : ''}>nový</option><option value="otevřený" ${value === 'otevřený' ? 'selected' : ''}>otevřený</option></select></label>`;
-    return `<label>${esc(label)}<input name="${key}" type="${kind}" value="${esc(value)}" ${key === 'expiration' ? 'pattern="\\d{2}\\/\\d{2}"' : ''} required></label>`;
-  }).join('');
-  $('#dialog').showModal();
-}
-
-function storeRows(type) { return data[tableConfig(type) ? type : 'stock']; }
-
-function addRow(type, values) {
-  const rows = storeRows(type);
-  const prefix = { materials:'MAT', stock:'P', moves:'M', locations:'POS' }[type];
-  const next = rows.reduce((n, r) => Math.max(n, Number(String(r.id).replace(/\D/g,'')) || 0), 0) + 1;
-  const id = `${prefix}-${String(next).padStart(4,'0')}`;
-  rows.unshift({ id, ...values });
-}
-
-$('#pageNav').addEventListener('click', e => {
-  const button = e.target.closest('[data-page]');
-  if (!button) return;
-  currentPage = button.dataset.page;
-  query = '';
-  sort = { key: null, direction: 1 };
-  renderNav(); renderPage();
-  $('#sidebar').classList.remove('open');
-});
-
-$('#content').addEventListener('click', e => {
-  const go = e.target.closest('[data-go]');
-  if (go) { currentPage = go.dataset.go; renderNav(); renderPage(); return; }
-  const sortBtn = e.target.closest('[data-sort]');
-  if (sortBtn) { sort.direction = sort.key === sortBtn.dataset.sort ? sort.direction * -1 : 1; sort.key = sortBtn.dataset.sort; renderPage(); return; }
-  const row = e.target.closest('[data-row-id]');
-  if (!row) return;
-  const page = current();
-  if (e.target.closest('.edit')) openEditor(page.table, row.dataset.rowId);
-  if (e.target.closest('.delete')) {
-    const rows = storeRows(page.table);
-    const index = rows.findIndex(r => r.id === row.dataset.rowId);
-    if (index !== -1 && confirm('Opravdu smazat tuto položku?')) { rows.splice(index, 1); save(); renderPage(); }
-  }
-});
-
-$('#content').addEventListener('input', e => {
-  if (e.target.id === 'tableSearch') { query = e.target.value; renderPage(); const input = $('#tableSearch'); input?.focus(); input?.setSelectionRange(query.length, query.length); }
-});
-
-$('#pageAction').addEventListener('click', () => {
-  const page = current();
-  if (page.type === 'dashboard') return $('#newPage').click();
-  openEditor(page.table);
-});
-
-$('#newPage').addEventListener('click', () => {
-  const title = prompt('Název nové stránky:');
-  if (!title?.trim()) return;
-  const id = `page-${Date.now()}`;
-  data.pages.push({ id, title: title.trim(), description: 'Nová stránka.', icon: '□', type: 'table', table: 'materials' });
-  save(); currentPage = id; renderNav(); renderPage();
-});
-
-$('#form').addEventListener('submit', e => {
-  if (e.submitter?.value === 'cancel') return;
-  e.preventDefault();
-  const form = new FormData(e.currentTarget);
-  const values = Object.fromEntries(form.entries());
-  const rows = storeRows(editing.type);
-  if (editing.id) {
-    const row = rows.find(r => r.id === editing.id);
-    if (row) Object.assign(row, values);
-  } else addRow(editing.type, values);
-  save(); $('#dialog').close(); renderPage();
-});
-
-$('#refreshBtn').addEventListener('click', () => { query = ''; sort = { key: null, direction: 1 }; renderPage(); });
-$('#themeBtn').addEventListener('click', () => {
-  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = next; localStorage.setItem(THEME, next);
-});
-$('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
-
-const savedTheme = localStorage.getItem(THEME) || 'light';
-document.documentElement.dataset.theme = savedTheme;
-renderNav();
-renderPage();
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const DATA={materials:[
+{id:'S-001',name:'Ashwagandha KSM-66',min:5000},{id:'S-002',name:'Boswellia serrata',min:4000},{id:'S-003',name:'Rozchodnice růžová',min:3500},{id:'S-004',name:'Kotvičník zemní',min:2500},{id:'S-005',name:'Maca',min:3000}],
+boxes:Array.from({length:20},(_,i)=>({id:String(i+1)})),
+positions:Array.from({length:4},(_,r)=>Array.from({length:10},(_,c)=>({id:`${String.fromCharCode(65+r)}${c+1}`}))).flat(),
+packs:[{id:'P-2026-001',material:'S-001',lot:'AK66-260801',expiry:'08/27',qty:2400,box:'1',position:'A1',state:'nový'},{id:'P-2026-002',material:'S-001',lot:'AK66-260812',expiry:'08/27',qty:1800,box:'2',position:'A2',state:'otevřený'},{id:'P-2026-003',material:'S-002',lot:'BS-260802',expiry:'08/27',qty:4100,box:'3',position:'A3',state:'nový'},{id:'P-2026-004',material:'S-003',lot:'RR-260805',expiry:'08/27',qty:3200,box:'4',position:'B1',state:'nový'},{id:'P-2026-005',material:'S-004',lot:'KT-260808',expiry:'08/27',qty:2100,box:'5',position:'B2',state:'otevřený'},{id:'P-2026-006',material:'S-005',lot:'MA-260810',expiry:'08/27',qty:2900,box:'6',position:'B3',state:'nový'},{id:'P-2026-007',material:'S-002',lot:'BS-260818',expiry:'08/27',qty:2200,box:'7',position:'C1',state:'nový'}],
+movements:[{id:'M-001',date:'30. 8. 2026 08:50',type:'Příjem',pack:'P-2026-007',qty:2200,from:'Příjem',to:'C1'},{id:'M-002',date:'30. 8. 2026 08:10',type:'Výdej',pack:'P-2026-002',qty:-300,from:'A2',to:'Výdej'},{id:'M-003',date:'29. 8. 2026 16:31',type:'Přesun',pack:'P-2026-005',qty:0,from:'A4',to:'B2'},{id:'M-004',date:'29. 8. 2026 13:05',type:'Výdej',pack:'P-2026-001',qty:-400,from:'A1',to:'Výdej'}]};
+const PAGES=[{id:'dashboard',label:'Přehled'},{id:'inventory',label:'Zásoby'},{id:'warehouse',label:'Pozice'},{id:'movements',label:'Pohyby'},{id:'materials',label:'Suroviny'},{id:'counts',label:'Inventura'}];
+const state={page:localStorage.getItem('mp12-page')||'inventory',previous:null,direction:1,q:'',theme:localStorage.getItem('mp12-theme')||'dark'};
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mat=id=>DATA.materials.find(x=>x.id===id); const fmt=n=>new Intl.NumberFormat('cs-CZ',{maximumFractionDigits:2}).format(Number(n)||0);
+function activePacks(){return DATA.packs.filter(x=>x.qty>0)} function totalStock(){return activePacks().reduce((a,x)=>a+x.qty,0)}
+function summary(){const a=activePacks();$('#summary').innerHTML=[['Pytle',a.length,'aktivní'],['Sklad',fmt(totalStock()),'g celkem'],['Boxy',new Set(a.map(x=>x.box)).size,'obsazené'],['Pozice',new Set(a.map(x=>x.position)).size,'použité']].map(x=>`<div class="metric"><small>${x[0]}</small><strong>${x[1]}</strong><span>${x[2]}</span></div>`).join('')}
+function pageTabs(){ $('#pageTabs').innerHTML=PAGES.map((p,i)=>`<button class="page-tab ${p.id===state.page?'active':''}" data-page="${p.id}">${esc(p.label)}</button>`).join(''); $$('.page-tab').forEach(b=>b.onclick=()=>switchPage(b.dataset.page)); }
+function table(headers,rows){return `<div class="table-card"><div class="table-head"><small>${rows.length} ${rows.length===1?'řádek':'řádků'}</small><div class="table-actions"><button class="btn" data-refresh>Obnovit</button></div></div><div class="table-scroll"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${headers.length}" class="empty">Nic nenalezeno</td></tr>`}</tbody></table></div></div>`}
+function inventory(){let rows=activePacks(); if(state.q)rows=rows.filter(p=>`${p.id} ${p.lot} ${p.position} ${p.box} ${mat(p.material)?.name}`.toLocaleLowerCase('cs-CZ').includes(state.q)); return table(['ID pytle','Surovina','Šarže','Expirace','Box','Pozice','Aktuální hmotnost','Stav',''],rows.map(p=>`<tr><td class="mono">${p.id}</td><td>${esc(mat(p.material)?.name||p.material)}</td><td class="mono">${esc(p.lot)}</td><td>${esc(p.expiry)}</td><td>${esc(p.box)}</td><td><span class="pill">${esc(p.position)}</span></td><td class="num">${fmt(p.qty)} g</td><td><span class="pill">${esc(p.state)}</span></td><td class="row-actions"><button class="row-btn" data-detail="${p.id}">Detail</button><button class="row-btn" data-move="${p.id}">Přesun</button></td></tr>`));}
+function warehouse(){const groups={}; activePacks().forEach(p=>(groups[p.position]??=[]).push(p)); const rows=Object.entries(groups).sort().map(([pos,ps])=>`<tr><td><span class="pill">${pos}</span></td><td>${ps.map(p=>p.box).join(', ')}</td><td>${ps.map(p=>esc(mat(p.material)?.name||p.material)).join(' · ')}</td><td class="num">${fmt(ps.reduce((a,p)=>a+p.qty,0))} g</td><td>${ps.length}</td></tr>`); return table(['Pozice','Boxy','Suroviny','Hmotnost','Pytle'],rows)}
+function movements(){let rows=DATA.movements; if(state.q)rows=rows.filter(m=>`${m.id} ${m.type} ${m.pack} ${m.from} ${m.to}`.toLocaleLowerCase('cs-CZ').includes(state.q));return table(['ID','Datum','Typ','Pytel','Množství','Odkud','Kam'],rows.map(m=>`<tr><td class="mono">${m.id}</td><td>${m.date}</td><td><span class="pill">${m.type}</span></td><td class="mono">${m.pack}</td><td class="num">${m.qty?fmt(m.qty)+' g':'—'}</td><td>${m.from}</td><td>${m.to}</td></tr>`))}
+function materials(){let rows=DATA.materials; if(state.q)rows=rows.filter(m=>`${m.id} ${m.name}`.toLocaleLowerCase('cs-CZ').includes(state.q)); return table(['ID','Surovina','Pytle','Hmotnost','Minimum'],rows.map(m=>{const ps=activePacks().filter(p=>p.material===m.id);return `<tr><td class="mono">${m.id}</td><td><strong>${esc(m.name)}</strong></td><td>${ps.length}</td><td class="num">${fmt(ps.reduce((a,p)=>a+p.qty,0))} g</td><td class="num">${fmt(m.min)} g</td></tr>`}))}
+function counts(){return table(['Inventura','Stav','Položek','Akce'],[`<tr><td><strong>Průběžná inventura</strong></td><td><span class="pill">Připravena</span></td><td>0</td><td><button class="row-btn" data-startcount>Začít</button></td></tr>`])}
+function dashboard(){return `<div class="dashboard"><section class="panel"><h2>Rychlý přehled</h2><div class="stats-grid"><div class="mini-stat"><small>Pytle</small><strong>${activePacks().length}</strong></div><div class="mini-stat"><small>Hmotnost</small><strong>${fmt(totalStock())} g</strong></div><div class="mini-stat"><small>Pohyby</small><strong>${DATA.movements.length}</strong></div></div><h2>Poslední pohyby</h2><div class="quick">${DATA.movements.slice(0,4).map(m=>`<button data-page="movements"><span>${m.type}</span><strong>${m.pack}</strong><span>${m.to}</span></button>`).join('')}</div></section><section class="panel"><h2>Stránky</h2><div class="quick">${PAGES.filter(p=>p.id!=='dashboard').map(p=>`<button data-page="${p.id}"><strong>${p.label}</strong><span>→</span></button>`).join('')}</div></section></div>`}
+function contentFor(id){return id==='dashboard'?dashboard():id==='inventory'?inventory():id==='warehouse'?warehouse():id==='movements'?movements():id==='materials'?materials():counts()}
+function includePages(page=state.page){const viewport=$('#pageViewport');const old=viewport.querySelector('.page-layer.active');const layer=document.createElement('section');layer.className='page-layer';layer.innerHTML=contentFor(page); viewport.appendChild(layer); requestAnimationFrame(()=>{if(old){old.classList.remove('active');old.classList.add(state.direction>0?'before':'behind');setTimeout(()=>old.remove(),240)}layer.classList.add('active');}); if(!old)layer.classList.add('instant','active');}
+function switchPage(page){if(page===state.page)return;const a=PAGES.findIndex(p=>p.id===state.page),b=PAGES.findIndex(p=>p.id===page);state.direction=b>a?1:-1;state.previous=state.page;state.page=page;localStorage.setItem('mp12-page',page);pageTabs();$('#pageTitle').textContent=PAGES.find(p=>p.id===page)?.label||page;$('#pageKicker').textContent='Pages';includePages(page);}
+function openDialog(title,fields,onSave){$('#dialogTitle').textContent=title;$('#formFields').innerHTML=`<div class="dialog-fields">${fields}</div>`;$('#dialog').showModal();$('#form').onsubmit=e=>{if(e.submitter?.value==='cancel')return;e.preventDefault();onSave(new FormData($('#form')));$('#dialog').close();}}
+function receive(){openDialog('Příjem zásoby',`<label>ID pytle<input name="id" value="P-2026-008" required></label><label>Šarže<input name="lot" required></label><label>Expirace (MM/YY)<input name="expiry" placeholder="08/27" required></label><label>Hmotnost (g)<input name="qty" type="number" min="0" step="0.01" value="1000" required></label><label>Box<input name="box" value="8" required></label><label>Pozice<input name="position" value="C2" required></label>`,f=>{DATA.packs.unshift({id:f.get('id'),material:'S-001',lot:f.get('lot'),expiry:f.get('expiry'),qty:+f.get('qty'),box:String(f.get('box')),position:f.get('position'),state:'nový'});render();});}
+function move(id){const p=DATA.packs.find(x=>x.id===id);if(!p)return;openDialog('Přesun pytle',`<label>Pytel<input value="${esc(p.id)}" disabled></label><label>Nová pozice<input name="position" value="${esc(p.position)}" required></label>`,f=>{const from=p.position;p.position=f.get('position');DATA.movements.unshift({id:`M-${String(DATA.movements.length+1).padStart(3,'0')}`,date:new Date().toLocaleString('cs-CZ'),type:'Přesun',pack:p.id,qty:0,from,to:p.position});render();});}
+function detail(id){const p=DATA.packs.find(x=>x.id===id);if(!p)return;openDialog(p.id,`<label>Surovina<input value="${esc(mat(p.material)?.name||p.material)}" disabled></label><label>Šarže<input value="${esc(p.lot)}" disabled></label><label>Hmotnost<input value="${fmt(p.qty)} g" disabled></label><label>Pozice<input value="${esc(p.position)}" disabled></label>`,()=>{});}
+function render(){document.documentElement.dataset.theme=state.theme;summary();pageTabs();$('#pageTitle').textContent=PAGES.find(p=>p.id===state.page)?.label||'';$('#search').value=state.q;$('#pageViewport').querySelectorAll('.page-layer').forEach(x=>x.remove());includePages(state.page);}
+$('#search').oninput=e=>{state.q=e.target.value;const active=$('#pageViewport .page-layer.active');if(active){active.innerHTML=contentFor(state.page);}};
+$('#themeBtn').onclick=()=>{state.theme=state.theme==='dark'?'light':'dark';localStorage.setItem('mp12-theme',state.theme);render();};
+$('#refreshBtn').onclick=()=>render();$('#addBtn').onclick=receive;
+$('#pageViewport').addEventListener('click',e=>{const page=e.target.closest('[data-page]');if(page){switchPage(page.dataset.page);return}const m=e.target.closest('[data-move]');if(m)move(m.dataset.move);const d=e.target.closest('[data-detail]');if(d)detail(d.dataset.detail);const c=e.target.closest('[data-startcount]');if(c)openDialog('Inventura','<div class="dialog-fields"><p>Zahájit novou inventuru skladu?</p></div>',()=>{});});
+render();
+})();
