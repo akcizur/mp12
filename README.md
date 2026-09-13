@@ -1,35 +1,33 @@
 # MP12
 
-Statická aplikace pro zobrazení stránek v klasickém seznamu nebo jako překrývající se stack karet.
+Jednoduchá statická aplikace postavená kolem **Pages + Tables**.
 
-## Hlavní část
+## Princip
 
-`includePages(items, mode)` je společný renderer pro oba režimy:
+Vlevo jsou stránky. Kliknutím se otevře jedna stránka v hlavním prostoru. Každá datová stránka používá jednoduchou tabulku se stejným ovládáním:
 
-- `list` — standardní seznam
-- `stack` — karty jsou absolutně pozicované, mají vlastní `z-index`, posun a rotaci a fyzicky se překrývají
+- hledání,
+- řazení kliknutím na hlavičku,
+- `Upravit`,
+- `Smazat`,
+- `＋ Přidat`.
 
-Kliknutí na kartu ve stacku ji přesune na vrchol a pořadí se uloží do `localStorage`.
+Výchozí stránky jsou `Přehled`, `Suroviny`, `Sklad`, `Pohyby` a `Pozice`.
+
+## Ovládání
+
+**Přehled** slouží jako startovní stránka a obsahuje rychlé statistiky a poslední pohyby.
+
+**Suroviny / Sklad / Pohyby / Pozice** jsou obyčejné tabulky. Žádné překrývající se karty ani speciální režim stacku.
+
+Data se ukládají lokálně do `localStorage`, takže není potřeba backend ani databáze.
 
 ## Spuštění
-
-Projekt nevyžaduje build ani backend. Pro lokální vývoj lze použít:
 
 ```bash
 python -m http.server 8080
 ```
 
-nebo libovolný statický server.
+Potom otevři `http://localhost:8080`.
 
-## GitHub Pages
-
-Repozitář je připravený jako čistý statický web. Jako entrypoint slouží `index.html`.
-
-## Soubory
-
-```text
-index.html
-styles.css
-app.js
-README.md
-```
+Projekt je čisté HTML/CSS/JS a je připravený pro GitHub Pages.
