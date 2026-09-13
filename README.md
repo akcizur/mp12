@@ -4,11 +4,19 @@ Vite + vanilla JavaScript inventory aplikace navazující na původní Botanic/W
 
 ## Princip UI
 
-Aplikace má jeden pracovní viewport. `Pages` se nepíšou pod sebe: při přepnutí se nová stránka překryje přes aktuální a stará se po krátké animaci odstraní. Tabulky tedy zůstávají ve stejném prostoru.
+Aplikace má jeden pracovní viewport. `Pages` se nepíšou pod sebe: při přepnutí se nová stránka překryje přes aktuální a stará se po krátké animaci odstraní.
 
 Pages:
 
 `Zásoby` · `Pozice` · `Pohyby` · `Suroviny` · `Inventury`
+
+## Skladová hierarchie
+
+Stránka `Pozice` zobrazuje fyzické uložení jako hierarchii:
+
+`Pozice → Box → Pytle`
+
+Každá pozice A1–D10 je vlastní sekce. V jedné pozici může být více boxů. Každý box vypisuje aktivní pytle podle ID a názvu suroviny; hmotnost je zobrazena jako doplňková hodnota.
 
 ## Inventory DB
 
@@ -35,24 +43,14 @@ Expirace je pouze `mm/yy`. Hmotnosti jsou v gramech.
 - Detail pytle
 - Řazení tabulek
 - Hledání v aktuální page
-- Warehouse grid pozic
+- Hierarchický pohled Pozice → Box → Pytle
 - Inventury
-- CSV import/export skladu
+- CSV export skladu
 - Dark/light motiv
 - Kompaktní zobrazení
 - Lokální persistence bez backendu
 
-## CSV
-
-Export vytváří `mp12-sklad-YYYY-MM-DD.csv` se středníkem jako oddělovačem a BOM pro Excel.
-
-Import očekává hlavičky:
-
-```text
-id;material;lot;expiry;box;position;qty;packState
-```
-
-Při importu může být `material` ID nebo přesný název suroviny. Neznámý název se automaticky přidá do katalogu.
+Import CSV není součástí aplikace.
 
 ## Vývoj
 
