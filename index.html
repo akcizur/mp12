@@ -1,69 +1,38 @@
 <!doctype html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f5f5f7">
-  <title>MP12 · Pages</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080808">
+<title>MP12 · Sklad</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <div class="brand-icon">M</div>
-        <div><strong>MP12</strong><span>Pages</span></div>
-      </div>
-
-      <button class="new-page" id="newPage" type="button">＋ Nová stránka</button>
-
-      <div class="side-label">Stránky</div>
-      <nav id="pageNav" class="page-nav" aria-label="Stránky"></nav>
-
-      <div class="sidebar-bottom">
-        <button class="side-action" id="themeBtn" type="button"><span>◐</span> Motiv</button>
-        <div class="connection"><i></i><span>Lokální data</span></div>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="mobile-header">
-        <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu">☰</button>
-        <strong id="mobileTitle">MP12</strong>
-      </header>
-
-      <section class="page-header">
-        <div class="breadcrumbs"><span>Pages</span><b>/</b><span id="breadcrumbCurrent">Přehled</span></div>
-        <div class="title-line">
-          <div>
-            <h1 id="pageTitle">Přehled</h1>
-            <p id="pageDescription">Jednoduchý přehled obsahu aplikace.</p>
-          </div>
-          <div class="title-actions">
-            <button class="btn" id="refreshBtn" type="button">Obnovit</button>
-            <button class="btn primary" id="pageAction" type="button">＋ Přidat</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="content" id="content" aria-live="polite"></section>
-    </main>
+<div class="app">
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">M</span><div><strong>MP12</strong><small>SKLAD</small></div></div>
+  <nav class="page-tabs" id="pageTabs" aria-label="Pages"></nav>
+  <div class="top-actions">
+    <button class="icon-btn" id="themeBtn" type="button" title="Motiv">◐</button>
+    <button class="btn primary" id="addBtn" type="button">+ Příjem</button>
   </div>
-
-  <dialog id="dialog">
-    <form method="dialog" id="form" class="dialog-card">
-      <div class="dialog-head">
-        <div><small>EDITACE</small><h2 id="dialogTitle">Nová položka</h2></div>
-        <button class="icon-btn" value="cancel" type="submit">×</button>
+</header>
+<main>
+  <section class="summary" id="summary"></section>
+  <div class="workspace">
+    <div class="workspace-bar">
+      <div class="workspace-title"><span id="pageKicker">Pages</span><strong id="pageTitle">Zásoby</strong></div>
+      <div class="workspace-tools">
+        <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Hledat…" autocomplete="off"></label>
+        <button class="btn" id="refreshBtn" type="button">Obnovit</button>
       </div>
-      <div id="formFields"></div>
-      <div class="dialog-actions">
-        <button class="btn" value="cancel">Zrušit</button>
-        <button class="btn primary" id="saveBtn" value="default">Uložit</button>
-      </div>
-    </form>
-  </dialog>
-
-  <script src="app.js"></script>
+    </div>
+    <div id="pageViewport" class="page-viewport" aria-live="polite"></div>
+  </div>
+</main>
+<footer class="bottom"><span id="selection">0 řádků</span><span>Lokální data</span></footer>
+</div>
+<dialog id="dialog"><form method="dialog" id="form" class="dialog-card"><div class="dialog-head"><div><small id="dialogKicker">AKCE</small><h2 id="dialogTitle">Příjem</h2></div><button class="icon-btn" value="cancel" type="submit">×</button></div><div id="formFields"></div><div class="dialog-actions"><button class="btn" value="cancel">Zrušit</button><button class="btn primary" value="default">Uložit</button></div></form></dialog>
+<script src="app.js"></script>
 </body>
 </html>
