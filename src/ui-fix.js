@@ -172,6 +172,13 @@ style.textContent = `
   .db-row:last-child { border-bottom: 0; }
   .db-row b { font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 10px; }
   .db-row span { color: hsl(var(--muted-foreground)); text-align: right; }
+  .reference-select.invalid-reference {
+    border-color: hsl(var(--destructive));
+  }
+  .reference-warning {
+    color: hsl(var(--destructive));
+    font-size: 10px;
+  }
   @media (max-width: 820px) {
     .sidebar {
       padding: 16px 12px;
@@ -331,3 +338,74 @@ if (sidebarFoot && importButton && exportButton && themeButton) {
     }
   })
 }
+
+function getReferenceData() {
+  try {
+    const data = JSON.parse(localStorage.getItem('mp12-inventory-v4') || 'null') || {}
+    return {
+      materials: Array.isArray(data.materials) ? data.materials : [],
+      boxes: Array.isArray(data.boxes) ? data.boxes : [],
+      positions: Array.isArray(data.positions) ? data.positions : []
+    }
+  } catch {
+    return { materials: [], boxes: [], positions: [] }
+  }
+}
+
+function replaceWithReferenceSelect(input, items, label) {
+  if (!input || input.dataset.referenceSelect === '1') return
+  const value = String(input.value || '').trim()
+  const select = document.createElement('select')
+  select.name = input.name
+  select.className = `${input.className || ''} reference-select`.trim()
+  select.required = input.required
+  select.disabled = input.disabled
+  select.dataset.referenceSelect = '1'
+
+  const placeholder = document.createElement('option')
+  placeholder.value = ''
+  placeholder.textContent = `Vyberte ${label}`
+  placeholder.disabled = true
+  placeholder.selected = !value
+  select.appendChild(placeholder)
+
+  const values = items.map(item => typeof item === 'string' ? item : item.id).filter(Boolean).map(String)
+  const validValue = values.includes(value)
+
+  if (value && !validValue) {
+    const invalid = document.createElement('option')
+    invalid.value = ''
+    invalid.textContent = `Neplatné: ${value} — vyberte z DB`
+    invalid.disabled = true
+    invalid.selected = true
+    select.appendChild(invalid)
+    select.classList.add('invalid-reference')
+  }
+
+  values.forEach(id => {
+    const option = document.createElement('option')
+    option.value = id
+    option.textContent = id
+    if (id === value && validValue) option.selected = true
+    select.appendChild(option)
+  })
+
+  input.replaceWith(select)
+
+  if (!validValue && value) {
+    const note = document.createElement('small')
+    note.className = 'reference-warning'
+    note.textContent = `Původní ${label} „${value}“ není v referenční DB.`
+    select.insertAdjacentElement('afterend', note)
+  }
+}
+
+function normalizeReferenceInputs(rootNode = document) {
+  const data = getReferenceData()
+  rootNode.querySelectorAll('input[name="box"]').forEach(input => replaceWithReferenceSelect(input, data.boxes, 'box'))
+  rootNode.querySelectorAll('input[name="position"]').forEach(input => replaceWithReferenceSelect(input, data.positions, 'pozici'))
+}
+
+const referenceObserver = new MutationObserver(() => normalizeReferenceInputs(document))
+referenceObserver.observe(document.body, { childList: true, subtree: true })
+normalizeReferenceInputs(document)
